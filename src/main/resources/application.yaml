@@ -14,6 +14,19 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.9
+      embedding:
+        options:
+          model: text-embedding-3-small
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/my-test-vector-db
+    username: my-user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
 
 logging:
   level:
