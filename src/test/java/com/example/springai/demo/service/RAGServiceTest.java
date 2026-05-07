@@ -27,7 +27,13 @@ public class RAGServiceTest {
 
     @Test
     public void testAskAi(){
-        String message = ragService.askAi("what is os and pagination");
+        String message = ragService.askAi("what is multithreading?");
+        System.out.println(message);
+    }
+
+    @Test
+    public void testAskAiWithAdvisor(){
+        String message = ragService.askAiWithAdvisor("what is Clash of clans", "rohit@123");
         System.out.println(message);
     }
 }

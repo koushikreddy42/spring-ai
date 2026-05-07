@@ -1,8 +1,14 @@
 package com.example.springai.demo.service;
 
+import com.example.springai.demo.advisor.TokenUsageAdvisor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.SafeGuardAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.VectorStoreChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -22,9 +28,41 @@ import java.util.Map;
 public class RAGService {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
+    private final ChatMemory chatMemory;
 
     @Value("classpath:os.pdf")
     Resource pdfFile;
+
+    public String askAiWithAdvisor(String prompt, String userId){
+        return chatClient.prompt()
+                .system("""
+                        you are an ai assistant named bobby.
+                        greet users with your name (bobby) and the user name if you know their name.
+                        answer in a friendly, conversational tone.
+                        """)
+                .user(prompt)
+                .advisors(
+//                        new SafeGuardAdvisor(List.of("clash of clans")),
+                        MessageChatMemoryAdvisor.builder(chatMemory)
+                                        .conversationId(userId)
+                                                .build(),
+                        VectorStoreChatMemoryAdvisor.builder(vectorStore)
+                                .conversationId(userId)
+                                .defaultTopK(4)
+                                .build(),
+                        QuestionAnswerAdvisor.builder(vectorStore)
+                                .searchRequest(
+                                        SearchRequest.builder()
+                                                .filterExpression("file_name == 'os.pdf'")
+                                                .topK(4)
+                                                .build()
+                                )
+                                .build(),
+                        new TokenUsageAdvisor()
+                )
+                .call()
+                .content();
+    }
 
     public String askAi(String prompt){
         String template = """
@@ -60,7 +98,7 @@ public class RAGService {
         return chatClient.prompt(systemPrompt)
                 .system(systemPrompt)
                 .user(prompt)
-                .advisors(new SimpleLoggerAdvisor())
+                .advisors()
                 .call()
                 .content();
     }
