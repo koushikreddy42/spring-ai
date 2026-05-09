@@ -10,6 +10,8 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,9 +25,12 @@ public class FlightBookingTools {
             String userId,
             @ToolParam(description = "the destination of the flight")
             String destination,
-            @ToolParam(description = "the departure time of the flight")
-            Instant departureTime){
-        var flightBooking = flightBookingService.createBooking(userId, destination, departureTime);
+            @ToolParam(description = "the departure time of the flight in format 'yyyy-MM-dd'")
+            String departureTime){
+        // Parse the date string to Instant
+        LocalDate date = LocalDate.parse(departureTime);
+        Instant departureInstant = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        var flightBooking = flightBookingService.createBooking(userId, destination, departureInstant);
         return new FlightBookingResponse(
                 flightBooking.getId(),
                 flightBooking.getDestination(),
